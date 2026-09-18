@@ -25,6 +25,17 @@ export function textField(value) {
   return '';
 }
 export function httpsLink(value, feishuOnly = false) {
+  // Text fields may return document mentions as rich-text segments. Keep the
+  // explicit target instead of flattening the segments to their display names.
+  if (Array.isArray(value)) {
+    const targets = value.filter(part => part && typeof part === 'object' && ('link' in part || 'url' in part));
+    if (targets.length) {
+      const links = targets.map(part => httpsLink(part, feishuOnly));
+      if (links.some(link => !link)) return '';
+      const unique = [...new Set(links)];
+      return unique.length === 1 ? unique[0] : '';
+    }
+  }
   const raw = value && typeof value === 'object' && !Array.isArray(value) ? value.link ?? value.url : textField(value);
   try {
     const u = new URL(raw);
